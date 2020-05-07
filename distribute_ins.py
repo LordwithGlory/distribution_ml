@@ -43,8 +43,8 @@ def main(argv):
 
             # 建立数据的占位符
             with tf.variable_scope("data"):
-                x = tf.placeholder(tf.float32, [None, 28 * 28])
-                y_true = tf.placeholder(tf.float32, [None, 10])
+                x = tf.placeholder(tf.float32, [None, 28 * 28], name='x')
+                y_true = tf.placeholder(tf.float32, [None, 10], name='y_true')
 
             # 建立全连接层的神经网络
             with tf.variable_scope("fc_model"):
@@ -53,6 +53,7 @@ def main(argv):
                 bias = tf.Variable(tf.constant(0.0, shape=[10]), name="b")
                 # 预测结果
                 y_predict = tf.matmul(x, weight) + bias
+                y_predict = tf.Variable(y_predict,name="predict")
 
             # 所有样本损失值的平均值
             with tf.variable_scope("soft_loss"):
@@ -65,7 +66,7 @@ def main(argv):
             # 计算准确率
             with tf.variable_scope("acc"):
                 equal_list = tf.equal(tf.argmax(y_true, 1), tf.argmax(y_predict, 1))
-                accuracy = tf.reduce_mean(tf.cast(equal_list, tf.float32))
+                accuracy = tf.reduce_mean(tf.cast(equal_list, tf.float32),name="accuracy")
 
         # 创建分布式会话
         with tf.train.MonitoredTrainingSession(
@@ -83,7 +84,7 @@ def main(argv):
                 mon_sess.run(train_op, feed_dict={x: mnist_x, y_true: mnist_y})
 
                 graph_def = tf.get_default_graph().as_graph_def()
-                output_graph_def = graph_util.convert_variables_to_constants(mon_sess,graph_def,output_node_names=["acc/Mean"])
+                output_graph_def = graph_util.convert_variables_to_constants(mon_sess,graph_def,output_node_names=["acc/Mean","predict"])
                 mf=tf.gfile.GFile("mymodel.pb","wb")
                 mf.write(output_graph_def.SerializeToString())
                 print("训练第%d步, 准确率为%f" % (global_step.eval(session=mon_sess), mon_sess.run(accuracy, feed_dict={x: mnist_x, y_true: mnist_y})))
@@ -96,7 +97,8 @@ def main(argv):
                     # model_f.write(output_graph_def.SerializeToString())
                     save_path="save_models/mymodel"
                     # train_op mf graph_def 3 paras can't be the first para
-                    keras.models.save_model(graph_def, save_path, save_format="tf")
+
+                    # keras.models.save_model(graph_def, save_path, save_format="tf")
                     break
 
 
