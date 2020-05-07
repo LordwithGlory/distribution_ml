@@ -30,4 +30,6 @@ with gfile.FastGFile('mymodel.pb', 'rb') as f:
 mnist_x=mnist_x.reshape(mnist_x.shape[0],784)
 mnist_y=keras.utils.to_categorical(mnist_y,10)
 train_op=tf.GraphDef()
-sess.run(train_op, feed_dict={x: mnist_x})
+input_x=sess.graph.get_tensor_by_name('x')
+input_true=sess.graph.get_tensor_by_name('y_true')
+sess.run(train_op, feed_dict={input_x: mnist_x,input_true: mnist_y})
